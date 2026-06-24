@@ -1,0 +1,40 @@
+port: 7890
+socks-port: 7891
+proxies:
+  - name: HK-SS
+    type: ss
+    server: ss.example.com
+    port: 8388
+    cipher: aes-128-gcm
+    password: secret
+  - name: US-Trojan
+    type: trojan
+    server: trojan.example.com
+    port: 443
+    password: secret
+    sni: edge.example.com
+    skip-cert-verify: true
+    network: ws
+    ws-opts:
+      path: /ws
+      headers:
+        Host: edge.example.com
+proxy-groups:
+  - name: Auto
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    proxies:
+      - HK-SS
+      - US-Trojan
+  - name: Proxy
+    type: select
+    proxies:
+      - Auto
+      - HK-SS
+      - US-Trojan
+      - DIRECT
+rules:
+  - DOMAIN-SUFFIX,example.com,Proxy
+  - GEOIP,CN,DIRECT
+  - MATCH,Proxy

@@ -1,0 +1,15 @@
+# sing-box config
+config.json
+config.mixed-only.json
+raw-subscription.txt
+
+# Local documentation cache
+official-sing-box/
+site-cache/
+
+# OS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
