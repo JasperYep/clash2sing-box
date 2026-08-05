@@ -1,15 +1,18 @@
-# sing-box config
+# Generated sing-box configurations and subscription payloads
 config.json
 config.mixed-only.json
 raw-subscription.txt
 
-# Local documentation cache
+# Local documentation/site caches
 official-sing-box/
 site-cache/
 
-# OS
-.DS_Store
+# SingBoxSwitch build artifacts
+clients/SingBoxSwitch/build/
+clients/SingBoxSwitch/.build/
+clients/SingBoxSwitch/*.app
 
-# Editor
+# OS/editor files
+.DS_Store
 *.swp
 *.swo

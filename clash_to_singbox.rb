@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'base64'
 require 'fileutils'
 require 'json'
 require 'net/http'
@@ -92,7 +93,7 @@ class ClashToSingBox
     final_tag = explicit_final || infer_final_tag
     proxy_detour = infer_proxy_detour(final_tag)
 
-    attach_rule_set_http_clients!(proxy_detour)
+    attach_rule_set_download_detours!(proxy_detour)
 
     config = {
       'log' => {
@@ -427,13 +428,13 @@ class ClashToSingBox
     tag
   end
 
-  def attach_rule_set_http_clients!(proxy_detour)
+  def attach_rule_set_download_detours!(proxy_detour)
     return if proxy_detour.nil?
 
     @rule_sets.each_value do |rule_set|
       next unless rule_set['type'] == 'remote'
 
-      rule_set['http_client'] = { 'detour' => proxy_detour }
+      rule_set['download_detour'] = proxy_detour
     end
   end
 
@@ -501,23 +502,17 @@ class ClashToSingBox
   end
 
   def build_experimental
-    experimental = {
+    {
       'cache_file' => {
         'enabled' => true,
-        'path' => 'cache.db',
-        'store_dns' => true
-      }
-    }
-
-    unless @options[:sfm]
-      experimental['clash_api'] = {
+        'path' => 'cache.db'
+      },
+      'clash_api' => {
         'external_controller' => "127.0.0.1:#{@options[:api_port]}",
-        'external_ui' => '/etc/sing-box/ui/metacubexd',
+        'external_ui' => 'dashboard',
         'default_mode' => 'Rule'
       }
-    end
-
-    experimental
+    }
   end
 
   def build_outbounds
@@ -1080,7 +1075,7 @@ class ClashToSingBox
     stripped = text.gsub(/\s+/, '')
     return text unless stripped.match?(/\A[A-Za-z0-9+\/=]+\z/)
 
-    stripped.unpack1('m')
+    Base64.decode64(stripped)
   rescue ArgumentError
     text
   end
