@@ -1,126 +1,129 @@
 # Clash 订阅转 sing-box
 
-这个目录里放了两类东西：
+这个仓库用于把 Clash 订阅或本地配置转换成 sing-box `config.json`，并提供一个可选的轻量级 macOS 菜单栏控制器。
 
-1. `official-sing-box/` — 官方仓库 `SagerNet/sing-box` 的本地文档缓存
-2. `clash_to_singbox.rb` — 把 Clash 机场订阅转换成 sing-box `config.json` 的脚本
+## 目录
 
-## 用法
-
-最基础的目标就是：输入订阅链接，输出 `config.json`。
-
-先进入这个目录：
-
-```bash
-cd /Users/jasper/Documents/Codex/2026-04-23-https-sing-box-sagernet-org-clash
+```text
+clash_to_singbox.rb              Clash / V2Ray 配置转换器
+fixtures/                        脱敏测试样例
+clients/SingBoxSwitch/           原生 macOS 菜单栏控制器
+official-sing-box/               本地官方文档缓存（不提交）
+site-cache/                      本地站点缓存（不提交）
 ```
 
-最小用法：
+## 转换订阅
 
-```bash
-ruby clash_to_singbox.rb --url '你的 Clash 机场订阅链接'
-```
-
-这条命令会默认把结果写到当前目录的 `config.json`。
-
-如果你想显式指定输出路径：
+基础用法：
 
 ```bash
 ruby clash_to_singbox.rb \
-  --url '你的 Clash 机场订阅链接' \
-  --out /Users/jasper/Documents/Codex/2026-04-23-https-sing-box-sagernet-org-clash/config.json
+  --url '你的 Clash 订阅链接' \
+  --out /tmp/config.json
 ```
 
-如果你已经先把 Clash YAML 保存到本地，也可以直接转：
+从本地文件转换：
 
 ```bash
 ruby clash_to_singbox.rb \
   --file /absolute/path/to/profile.yaml \
-  --out /Users/jasper/Documents/Codex/2026-04-23-https-sing-box-sagernet-org-clash/config.json
+  --out /tmp/config.json
 ```
 
-如果订阅链接需要额外请求头，可以重复传 `--header`：
+附加请求头：
 
 ```bash
 ruby clash_to_singbox.rb \
-  --url '你的 Clash 机场订阅链接' \
+  --url '你的订阅链接' \
   --header 'User-Agent: clash-verge/v2' \
-  --header 'Authorization: Bearer xxxxx'
+  --header 'Authorization: Bearer xxxxx' \
+  --out /tmp/config.json
 ```
 
-如果要实施省电计划并固定到某个节点，可以额外加 `--power-save-fixed`：
+省电模式下固定到一个节点：
 
 ```bash
 ruby clash_to_singbox.rb \
-  --url '你的 Clash 机场订阅链接' \
-  --out /Users/jasper/Documents/Codex/2026-04-23-https-sing-box-sagernet-org-clash/config.json \
-  --power-save-fixed '🇸🇬 [A/0.6x] SG 联通移动*'
+  --url '你的订阅链接' \
+  --power-save-fixed '节点标签' \
+  --out /tmp/config.json
 ```
 
-这个选项会移除 `urltest` 自动测速组，并把主出口固定到指定节点。
-
-如果你要把结果导入 SFM，建议额外加 `--sfm`：
+生成适配SFM的配置：
 
 ```bash
 ruby clash_to_singbox.rb \
-  --url '你的 Clash 机场订阅链接' \
+  --url '你的订阅链接' \
   --sfm \
-  --power-save-fixed '🇸🇬 [A/0.6x] SG 联通移动*'
+  --out /tmp/config.json
 ```
 
-这个选项会把系统代理接管方式改成 `tun.platform.http_proxy`，避免 `mixed.set_system_proxy`
-这类更适合命令行 sing-box 的配置在 SFM 里冲突。
+完整参数：
 
-## 参数
-
-- `--url URL`：Clash 机场订阅链接。
-- `--file PATH`：本地 Clash YAML 或 sing-box JSON 文件。
+- `--url URL`：远程订阅链接。
+- `--file PATH`：本地Clash YAML或sing-box JSON文件。
 - `--out PATH`：输出路径，默认是当前目录下的 `config.json`。
-- `--sfm`：生成适配 SFM/macOS 图形客户端的配置。
-- `--power-save-fixed TAG`：实施省电计划，并固定到指定节点标签。
-- `--mixed-port PORT`：mixed 入站端口，默认 `7890`。
-- `--api-port PORT`：Clash API 端口，默认 `9090`。
+- `--sfm`：生成适配SFM/macOS图形客户端的配置。
+- `--power-save-fixed TAG`：移除自动测速组并固定主出口。
+- `--mixed-port PORT`：mixed入站端口，默认 `7890`。
+- `--api-port PORT`：Clash API端口，默认 `9090`。
 - `--header 'Name: Value'`：附加请求头，可重复传入。
 
-## 默认输出特性
+## SingBoxSwitch
 
-- 同时生成 `mixed` 入站和 `tun` 入站，macOS 上两种方式都能用。
-- 如果加 `--sfm`，会保留 `mixed` 作为本地代理入口，但改由 `tun.platform.http_proxy` 接管系统代理。
-- 默认会生成 `selector` / `urltest` 代理组。
-- 自动加上 `sniff`、`hijack-dns`、`auto_detect_interface` 这些 sing-box 客户端常见必需项。
-- 内置 Clash API，默认监听 `127.0.0.1:9090`，方便切换 selector。
-- Clash 规则会尽量翻译；翻不了的规则会打印警告，不会静默吞掉。
+`clients/SingBoxSwitch/`是一个原生macOS菜单栏工具，直接复用Homebrew安装的sing-box，不运行第二个核心。
 
-## 已支持的常见节点类型
+功能包括：
 
-- `ss`
-- `trojan`
-- `vmess`
-- `vless`
-- `hysteria`
-- `hysteria2` / `hy2`
-- `tuic`
-- `socks`
-- `http`
+- 切换本地配置和订阅。
+- 切换节点并重启sing-box服务。
+- 刷新sing-box JSON订阅。
+- 开关macOS系统代理。
+- 临时测速并显示节点延迟。
+- 不启用TUN、常驻WebUI或特权helper。
 
-## 本地文档缓存更新
-
-需要更新官方文档时，直接执行：
+构建：
 
 ```bash
-git -C /Users/jasper/Documents/Codex/2026-04-23-https-sing-box-sagernet-org-clash/official-sing-box pull --ff-only
+cd clients/SingBoxSwitch
+./build.sh
+open ~/Applications/SingBoxSwitch.app
 ```
 
-## 在Arch上复制`config.json`到`/etc/sing-box/`目录
-```
-sudo install -Dm640 -o root -g sing-box ~/Downloads/config.json /etc/sing-box/config.json
-sudo sing-box -D /var/lib/sing-box -C /etc/sing-box check
-sudo systemctl restart sing-box
-sudo systemctl status sing-box --no-pager
+默认运行环境：
+
+```text
+核心：/opt/homebrew/bin/sing-box
+配置：/opt/homebrew/etc/sing-box/config.json
+本地代理：127.0.0.1:2080
+服务：brew services restart sing-box
 ```
 
-确认clash api是不是起来了
+测速只访问一个轻量的HTTP 204地址，使用临时sing-box实例和临时Clash API，测试完成后立即退出，不会把Clash API写入主配置。
+
+## 敏感文件
+
+机场订阅URL、生成的配置和节点凭证不应提交到GitHub。仓库的`.gitignore`已经忽略：
+
+```text
+config.json
+config.mixed-only.json
+raw-subscription.txt
+clients/SingBoxSwitch/build/
 ```
-sudo ss -lntp | grep -E '9090|sing-box'
-curl -v http://127.0.0.1:9090/configs
+
+提交前建议检查：
+
+```bash
+git status --short --ignored
+git grep -n -I -E 'https?://[^ ]+|uuid|password|private_key|secret' -- . \
+  ':!fixtures/*'
+```
+
+## 官方文档缓存
+
+`official-sing-box/`和`site-cache/`只用于本地检索，默认不提交。需要更新官方代码时，在对应目录执行：
+
+```bash
+git -C official-sing-box pull --ff-only
 ```
